@@ -23,6 +23,10 @@ class AIPlayer(Player):
 
     weightList[]
 
+    #CONSTANTS
+    alpha = .2
+    e = 2.71828
+
     #__init__
     #Description: Creates a new Player
     #
@@ -31,12 +35,14 @@ class AIPlayer(Player):
     ##
     def __init__(self, inputPlayerId):
         super(AIPlayer,self).__init__(inputPlayerId, "Dumb Bunny")
+        self.NeuralSize = 15 #should be updated
         self.depthLimit = 3
         self.bestOverallScore = 0
         if weightList == None:
-            while size(weightList) < 14: #17, not including workerDist yet
-                global weightList.append(random.range(0.0, 1.0))
+            while size(weightList) < self.NeuralSize: #17, not including workerDist yet
+                global weightList.append(random.range(0.1, .9))
         self.inputList = None
+        self.neuralScoreList = None
 
 
     ##
@@ -159,6 +165,10 @@ class AIPlayer(Player):
 
     #####
     def neuralEvaluation(self, stateList):
+
+        shuffle(stateList)
+        # ^ needs to be put in before call to neural evalation so that the same order is present in both this function and the backPropogation function
+
         for state in stateList:
             #defaults for various scores
             statescore = 0
@@ -216,6 +226,28 @@ class AIPlayer(Player):
             statescore += weight[12]*foodCount[9]
             statescore += weight[13]*foodCount[10]
             statescore += weight[14]*foodCount[11]
+
+            #append to the neural score list
+            self.neuralScoreList.append(statescore)
+
+    ##
+    def backPropogation(self, stateList): #also modifies the global weight list
+        errorList = []
+        index = 0
+        for state in stateList:
+            actualScore =  self.examineGameState(state)
+            neuralScore =  self.neuralScore(index)
+            index += 1
+            error = actualScore - neuralScore
+            if(error > 1 or error < 0):
+                print "Warning, invalid error at this node: " + str(error)
+            errorList.append(error)
+        weightSum = math.fsum(weightList)
+        index = 0
+        for err in errorList:
+
+
+
 
 
     ##

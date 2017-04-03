@@ -20,6 +20,9 @@ from AIPlayerUtils import *
 ##
 class AIPlayer(Player):
 
+
+    weightList[]
+
     #__init__
     #Description: Creates a new Player
     #
@@ -27,9 +30,14 @@ class AIPlayer(Player):
     #   inputPlayerId - The id to give the new player (int)
     ##
     def __init__(self, inputPlayerId):
-        super(AIPlayer,self).__init__(inputPlayerId, "Mad Max")
+        super(AIPlayer,self).__init__(inputPlayerId, "Dumb Bunny")
         self.depthLimit = 3
         self.bestOverallScore = 0
+        if weightList == None:
+            while size(weightList) < 14: #17, not including workerDist yet
+                global weightList.append(random.range(0.0, 1.0))
+        self.inputList = None
+
 
     ##
     #getPlacement
@@ -149,6 +157,67 @@ class AIPlayer(Player):
             utility = utility/2700
         return utility
 
+    #####
+    def neuralEvaluation(self, stateList):
+        for state in stateList:
+            #defaults for various scores
+            statescore = 0
+            numAnts = 1
+            queenOffAntHill = 1
+            workerCarrying = 1
+            #foodDist = [0, 0, 0, 0, 0, 0]   #workerDist from food or tunnel (1-6 tiles)
+            #tunnelDist = [0,0,0,0]
+            foodCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] #12 possibilities
+
+            #pull out desired info from each state
+            inventory = getCurrPlayerInventory(state)
+            for ant in inventory.ants:
+                if ant.type == QUEEN and (ant.coords == my_tunnel_cords
+                or ant.coords == my_anthill_coords or ant.coords == my_food_coords[0]
+                or ant.coords == my_food_coords[1]):
+                queenOffAntHill = 0
+
+                if ant.type == WORKER:
+                    if ant.carrying == False:
+                        workerCarrying = 0
+                        #food_1_distance = approxDist(ant.coords, my_food_coords[0])
+                        #food_2_distance = approxDist(ant.coords, my_food_coords[1])
+                        #if (food_1_distance < food_2_distance):
+                        #    dist = food_1_distance
+                        #else: dist = food_2_distance
+                        #if dist >6: dist = 6
+                        #workerDist[dist] = 1
+                    #else:
+                    #    ant_to_anthill = approxDist(ant.coords, my_anthill_coords)
+                    #    ant_to_tunnel = approxDist(ant.coords, my_tunnel_cords)
+                    #    if (ant_to_tunnel < ant_to_anthill):
+                    #        dist = ant_to_tunnel
+                    #    else: dist = ant_to_anthill
+                    #    if dist > 6
+
+            if size(inventory.ants) < 2:
+                numAnts = 0
+            foodCount[inventory.foodCount] = 1
+
+
+            #sum the weights with the boolean value of each state
+            statescore += weight[0]*numAnts
+            statescore += weight[1]*queenOffAntHill
+            statescore += weight[2]*workerCarrying
+            statescore += weight[3]*foodCount[0]
+            statescore += weight[4]*foodCount[1]
+            statescore += weight[5]*foodCount[2]
+            statescore += weight[6]*foodCount[3]
+            statescore += weight[7]*foodCount[4]
+            statescore += weight[8]*foodCount[5]
+            statescore += weight[9]*foodCount[6]
+            statescore += weight[10]*foodCount[7]
+            statescore += weight[11]*foodCount[8]
+            statescore += weight[12]*foodCount[9]
+            statescore += weight[13]*foodCount[10]
+            statescore += weight[14]*foodCount[11]
+
+
     ##
     #depthSearch
     #Description: finds the best move in the given state, RECURSIVE
@@ -196,6 +265,7 @@ class AIPlayer(Player):
             if bestMove == None:
                 return Move(END, None, None)
             else:
+                self.inputList.append(self.nextState)
                 self.bestOverallScore = 0
                 return bestMove
         else: #bottom of tree, return the score

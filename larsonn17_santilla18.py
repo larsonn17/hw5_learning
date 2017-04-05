@@ -190,6 +190,7 @@ class AIPlayer(Player):
                 if ant.type == WORKER:
                     if ant.carrying == False:
                         workerCarrying = 0
+                        #Test for food distance:
                         #food_1_distance = approxDist(ant.coords, my_food_coords[0])
                         #food_2_distance = approxDist(ant.coords, my_food_coords[1])
                         #if (food_1_distance < food_2_distance):
@@ -364,3 +365,12 @@ class AIPlayer(Player):
             if item['Score'] > bestScore:
                 bestScore = item['Score']
         return bestScore
+  #registerWin
+    #Is called when the game ends and simply indicates to the AI whether it has
+    # won or lost the game.
+    #
+    #Parameters:
+    #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
+    #
+    def registerWin(self, hasWon):
+        pass

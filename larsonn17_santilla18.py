@@ -20,12 +20,13 @@ from AIPlayerUtils import *
 ##
 class AIPlayer(Player):
 
-
-    weightList[]
-
     #CONSTANTS
     alpha = .2
     e = 2.71828
+    neuralSize = 15 #should be updated
+
+    global weightList
+    weightList = []
 
     #__init__
     #Description: Creates a new Player
@@ -35,15 +36,14 @@ class AIPlayer(Player):
     ##
     def __init__(self, inputPlayerId):
         super(AIPlayer,self).__init__(inputPlayerId, "Dumb Bunny")
-        self.NeuralSize = 15 #should be updated
-        self.depthLimit = 3
+        self.depthLimit = 2
         self.bestOverallScore = 0
+        self.inputList = []
+        self.neuralScoreList = []
+        self.deltaList = []
         if weightList == None:
             while size(weightList) < self.NeuralSize: #17, not including workerDist yet
-                global weightList.append(random.range(0.1, .9))
-        self.inputList = None
-        self.neuralScoreList = None
-
+                weightList.append(random.range(0.1, .9))
 
     ##
     #getPlacement
@@ -185,7 +185,7 @@ class AIPlayer(Player):
                 if ant.type == QUEEN and (ant.coords == my_tunnel_cords
                 or ant.coords == my_anthill_coords or ant.coords == my_food_coords[0]
                 or ant.coords == my_food_coords[1]):
-                queenOffAntHill = 0
+                    queenOffAntHill = 0
 
                 if ant.type == WORKER:
                     if ant.carrying == False:
@@ -237,20 +237,21 @@ class AIPlayer(Player):
         for state in stateList:
             actualScore =  self.examineGameState(state)
             neuralScore =  self.neuralScore(index)
-            index += 1
             error = actualScore - neuralScore
             if(error > 1 or error < 0):
                 print "Warning, invalid error at this node: " + str(error)
-            errorList.append(error)
-        weightSum = math.fsum(weightList)
+            self.deltaList.append(actualScore*(1 - actualScore)*error)
+            self.errorList.append(weight[index]*deltaList[index])
+            index += 1
+
         index = 0
-        for err in errorList:
+        while index < self.neuralSize:
+            currWeight = weightList[index]
+            currDelta = self.deltaList[index]
+            currNeurScore = self.neuralScore[index]
+            weightList[index] = currWeight + alpha*currDelta*currNeurScore
 
-
-
-
-
-    ##
+   ##
     #depthSearch
     #Description: finds the best move in the given state, RECURSIVE
     #
@@ -297,7 +298,7 @@ class AIPlayer(Player):
             if bestMove == None:
                 return Move(END, None, None)
             else:
-                self.inputList.append(self.nextState)
+                self.inputList.append(originalState)
                 self.bestOverallScore = 0
                 return bestMove
         else: #bottom of tree, return the score

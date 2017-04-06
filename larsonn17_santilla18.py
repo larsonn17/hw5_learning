@@ -1,5 +1,6 @@
 import random
 import sys
+import numpy as np
 sys.path.append("..")  #so other modules can be found in parent dir
 from Player import *
 from Constants import *
@@ -8,6 +9,7 @@ from Ant import UNIT_STATS
 from Move import Move
 from GameState import *
 from AIPlayerUtils import *
+
 
 ##
 #AIPlayer
@@ -179,6 +181,8 @@ class AIPlayer(Player):
             #tunnelDist = [0,0,0,0]
             foodCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] #12 possibilities
 
+
+
             #pull out desired info from each state
             inventory = getCurrPlayerInventory(state)
             for ant in inventory.ants:
@@ -191,7 +195,7 @@ class AIPlayer(Player):
                     if ant.carrying == False:
                         workerCarrying = 0
                         #Test for food distance:
-                        #food_1_distance = approxDist(ant.coords, my_food_coords[0])
+                        food_1_distance = approxDist(ant.coords, my_food_coords[0])
                         #food_2_distance = approxDist(ant.coords, my_food_coords[1])
                         #if (food_1_distance < food_2_distance):
                         #    dist = food_1_distance
@@ -205,6 +209,7 @@ class AIPlayer(Player):
                     #        dist = ant_to_tunnel
                     #    else: dist = ant_to_anthill
                     #    if dist > 6
+            if approxDist(myInventory.get)
 
             if size(inventory.ants) < 2:
                 numAnts = 0
@@ -228,8 +233,70 @@ class AIPlayer(Player):
             statescore += weight[13]*foodCount[10]
             statescore += weight[14]*foodCount[11]
 
+
             #append to the neural score list
             self.neuralScoreList.append(statescore)
+            
+
+    #Test method to create inputs using matrix and numpy library
+    def generateInputs(self, currentState):
+
+        #create empty matrix using numpy
+        temp = np.empty([1, 12])
+
+        #Variables
+        myInven = None
+        enemyInven = None
+        enemy = None
+        myInfo = None
+        whichSide = 0
+        workersArr = []
+        numWorkers = 0
+
+        if (currentState.inventory[0].player == currentState.whoseTurn):
+            myInven = currentState.inventory[0]
+            myInfo = myInv.player
+            enemyInven = currentState.inventory[1]
+            enemy = enemyInven.player
+            whichSide = 1
+        else:
+            myInven = currentState.inventory[1]
+            myInfo = myInven.player
+            enemyInven = currentState.inventory[0]
+            enemy = enemyInven.player
+            whichSide = 0
+
+        for ant in myInven.ants
+            if (ant.type == WORKER):
+                workersArr.append(ant)
+                numWorkers += 1
+        if numWorkers >= 4
+            return -1
+
+        #carrying food
+        distanceValue = 0
+        scale = 1
+        foodLocation = getConstrList(currentState, None, (FOOD,))
+        foodArr = []
+
+        if(whichSide == 1):
+            foodArr.append(foodLocation[2])
+            foodArr.append(foodLocation[3])
+        else:
+            foodArr.append(foodLocation[0])
+            foodArr.append(foodLocation[1])
+
+
+    ##
+    # g
+    # Description: Calculate g(x)
+    #
+    #Parameters:
+    #   x - value
+    #
+    ##
+    def g(self, x):
+        return 1/(1+math.exp(-x))
 
     ##
     def backPropogation(self, stateList): #also modifies the global weight list

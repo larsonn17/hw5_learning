@@ -165,10 +165,11 @@ class AIPlayer(Player):
         return utility
 
     #####
+    #
+    #
+    #
+    #
     def neuralEvaluation(self, stateList):
-
-        shuffle(stateList)
-        # ^ needs to be put in before call to neural evalation so that the same order is present in both this function and the backPropogation function
 
         for state in stateList:
             #defaults for various scores
@@ -297,7 +298,27 @@ class AIPlayer(Player):
     def g(self, x):
         return 1/(1+math.exp(-x))
 
+
     ##
+    # gPrime
+    # Description: Calculate g'(x)
+    #
+    #Parameter:
+    #   x - value
+    #
+    # returns:
+    #   the rough derivative value at that point
+    #
+    def gPrime(self, x):
+        return (x*(1-x))
+
+    ##
+    # backPropogation
+    # Description: modifies weight values after collecting an entire games worth
+    #   of games states
+    # Parameter:
+    #   stateList - list of all states in a game, should be shuffled before inputs
+    #
     def backPropogation(self, stateList): #also modifies the global weight list
         errorList = []
         index = 0
@@ -317,6 +338,7 @@ class AIPlayer(Player):
             currDelta = self.deltaList[index]
             currNeurScore = self.neuralScore[index]
             weightList[index] = currWeight + alpha*currDelta*currNeurScore
+            index += 1
 
    ##
     #depthSearch
@@ -432,9 +454,12 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
-        index = 0
-        for state in self.stateList:
-            print "State Number: " + str(index)
-            asciiPrintState(state)
-            index ++
+        #index = 0
+        #for state in self.stateList:
+        #    print "State Number: " + str(index)
+        #    asciiPrintState(state)
+        #    index ++
+        shuffle(self.stateList)
+        self.neuralEvaluation(self.stateList)
+        self.backPropogation(self.stateList)
         pass

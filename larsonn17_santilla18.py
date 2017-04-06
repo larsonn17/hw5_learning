@@ -24,7 +24,6 @@ class AIPlayer(Player):
 
     #CONSTANTS
     alpha = .2
-    e = 2.71828
     neuralSize = 15 #should be updated
 
     global weightList
@@ -236,7 +235,7 @@ class AIPlayer(Player):
 
             #append to the neural score list
             self.neuralScoreList.append(statescore)
-            
+
 
     #Test method to create inputs using matrix and numpy library
     def generateInputs(self, currentState):
@@ -339,15 +338,9 @@ class AIPlayer(Player):
         #get the current state score for comparison against child states
         currentStateScore = self.examineGameState(currentState)
         for move in movesList:
-            nextState = getNextStateAdversarial(currentState, move)
+            nextState = getNextState(currentState, move)
             newStateScore = self.examineGameState(nextState)
-            #if enemy turn, compare against the best seen enemy score (ab-prune)
-            if (nextState.whoseTurn != originalState.whoseTurn
-                and newStateScore > self.bestOverallScore):
-                moveObject = [move, nextState, newStateScore, nextState.whoseTurn]
-                gameStateDic.append(dict(zip(keys, moveObject)))
-            #if its our turn, only add states to list with scores higher than the current state
-            elif (newStateScore > currentStateScore):
+            if (newStateScore > currentStateScore):
                 moveObject = [move, nextState, newStateScore, nextState.whoseTurn]
                 gameStateDic.append(dict(zip(keys, moveObject)))
 
@@ -355,18 +348,17 @@ class AIPlayer(Player):
         if depth != self.depthLimit:
             for state in gameStateDic:
                 index = gameStateDic.index(state)
-                if index < 6: #dont recurse on more than 5 nodes for speed
-                    nextState = gameStateDic[index]['NextState']
-                    nextPlayer = gameStateDic[index]['Player']
-                    gameStateDic[index]['Score'] = self.depthSearch(nextState, originalState, depth+1)
+                nextState = gameStateDic[index]['NextState']
+                nextPlayer = gameStateDic[index]['Player']
+                gameStateDic[index]['Score'] = self.depthSearch(nextState, originalState, depth+1)
 
         #base case, return the move that had the best score
         if depth == 0:
             bestMove = self.findBestMove(gameStateDic)
+            self.stateList.append(getNextStateAdversarial(currentState, bestMove))
             if bestMove == None:
                 return Move(END, None, None)
             else:
-                self.stateList.append(getNextStateAdversarial(currentState, bestMove))
                 self.bestOverallScore = 0
                 return bestMove
         else: #bottom of tree, return the score
@@ -444,4 +436,5 @@ class AIPlayer(Player):
         for state in self.stateList:
             print "State Number: " + str(index)
             asciiPrintState(state)
+            index ++
         pass

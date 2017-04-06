@@ -38,7 +38,7 @@ class AIPlayer(Player):
         super(AIPlayer,self).__init__(inputPlayerId, "Dumb Bunny")
         self.depthLimit = 2
         self.bestOverallScore = 0
-        self.inputList = []
+        self.stateList = []
         self.neuralScoreList = []
         self.deltaList = []
         if weightList == None:
@@ -299,7 +299,7 @@ class AIPlayer(Player):
             if bestMove == None:
                 return Move(END, None, None)
             else:
-                self.inputList.append(originalState)
+                self.stateList.append(getNextStateAdversarial(currentState, bestMove))
                 self.bestOverallScore = 0
                 return bestMove
         else: #bottom of tree, return the score
@@ -373,4 +373,8 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
+        index = 0
+        for state in self.stateList:
+            print "State Number: " + str(index)
+            asciiPrintState(state)
         pass

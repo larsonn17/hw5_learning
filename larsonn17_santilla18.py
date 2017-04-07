@@ -237,16 +237,15 @@ class AIPlayer(Player):
             queenVal -= 0.5
         if approxDist(myInven.getQueen().coords, tunnel.coords) < 2:
             queenVal -= 0.5
-        if approxDist(myInven.getQueen().coords, foodArr[].coords) < 2:
+        if approxDist(myInven.getQueen().coords, foodArr[0].coords) < 2:
             queenVal -= 0.5
-        if approxDist(myInven.getQueen().coords, foodArr[]. coords) < 2:
+        if approxDist(myInven.getQueen().coords, foodArr[1]. coords) < 2:
             queenVal -= 0.5
 
         healthOfQueen = 0
         if enemyInven.getQueen() != None:
             healthOfQueen = (enemyInven.getQueen().health / 8)
         #foodValue =
-
 
 
 

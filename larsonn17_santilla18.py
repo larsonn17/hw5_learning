@@ -200,6 +200,9 @@ class AIPlayer(Player):
         scale = 1
         foodLocation = getConstrList(currentState, None, (FOOD,))
         foodArr = []
+        carryingWorkerVal = 0
+        notCarryingWorkerVal = 0
+
 
         if(whichSide == 1):
             foodArr.append(foodLocation[2])
@@ -218,6 +221,35 @@ class AIPlayer(Player):
                     distanceValue -= approxDist(worker.coords, antHill.coords)
             else:
                 distanceValue += (scale / numWorkers) * 2
+
+                if (approxDist(worker.coords, foodArr[0].coords)) < (approxDist(worker.coords, foodArr[1].coords):
+                    notCarryingWorkerVal += (scale / numWorkers) * 2
+                else:
+                    carryingWorkerVal -= (scale / numWorkers) * 2
+        distToQueen = 0
+        for ant in myInven.ants:
+            if ant.type != QUEEN and ant.type != WORKER and enemyInven.getQueen() != None:
+                distToQueen += approxDist(ant.coords, enemyInven.getQueen().coords) * 1
+
+        queenVal = 0.5
+
+        if approxDist(myInven.getQueen().coords, antHill.coords) < 2:
+            queenVal -= 0.5
+        if approxDist(myInven.getQueen().coords, tunnel.coords) < 2:
+            queenVal -= 0.5
+        if approxDist(myInven.getQueen().coords, foodArr[].coords) < 2:
+            queenVal -= 0.5
+        if approxDist(myInven.getQueen().coords, foodArr[]. coords) < 2:
+            queenVal -= 0.5
+
+        healthOfQueen = 0
+        if enemyInven.getQueen() != None:
+            healthOfQueen = (enemyInven.getQueen().health / 8)
+        #foodValue =
+
+
+
+
     ##
     # g
     # Description: Calculate g(x)

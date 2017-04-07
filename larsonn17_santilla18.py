@@ -126,13 +126,7 @@ class AIPlayer(Player):
             if food.coords[1] < 5:
                 my_food_coords.append(food.coords)
 
-    # This is where we will incentivize our ants.
-        #large negative value for losing queen or worker
-        if len(myInventory.ants) < 2:
-            utility -= 300
-
         for ant in myInventory.ants:
-            #do not want the queen to be on food or food drop off points
             if ant.type == QUEEN:
                 if (ant.coords == my_tunnel_cords or ant.coords == my_anthill_coords or
                     ant.coords == my_food_coords[0] or ant.coords == my_food_coords[1]):
@@ -158,84 +152,11 @@ class AIPlayer(Player):
                         utility += 200 - (10 * ant_to_tunnel)
                     else:
                         utility += 200 - (10 * ant_to_anthill)
-            #score increased by amount of food
-            utility += myInventory.foodCount*200
-            #scale down to a value between 0 and 1
-            utility = utility/2700
+        #score increased by amount of food
+        utility += myInventory.foodCount*200
+        #scale down to a value between 0 and 1
+        utility = utility/2600
         return utility
-
-    #####
-    #
-    #
-    #
-    #
-    def neuralEvaluation(self, stateList):
-
-        for state in stateList:
-            #defaults for various scores
-            statescore = 0
-            numAnts = 1
-            queenOffAntHill = 1
-            workerCarrying = 1
-            #foodDist = [0, 0, 0, 0, 0, 0]   #workerDist from food or tunnel (1-6 tiles)
-            #tunnelDist = [0,0,0,0]
-            foodCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] #12 possibilities
-
-
-
-            #pull out desired info from each state
-            inventory = getCurrPlayerInventory(state)
-            for ant in inventory.ants:
-                if ant.type == QUEEN and (ant.coords == my_tunnel_cords
-                or ant.coords == my_anthill_coords or ant.coords == my_food_coords[0]
-                or ant.coords == my_food_coords[1]):
-                    queenOffAntHill = 0
-
-                if ant.type == WORKER:
-                    if ant.carrying == False:
-                        workerCarrying = 0
-                        #Test for food distance:
-                        food_1_distance = approxDist(ant.coords, my_food_coords[0])
-                        #food_2_distance = approxDist(ant.coords, my_food_coords[1])
-                        #if (food_1_distance < food_2_distance):
-                        #    dist = food_1_distance
-                        #else: dist = food_2_distance
-                        #if dist >6: dist = 6
-                        #workerDist[dist] = 1
-                    #else:
-                    #    ant_to_anthill = approxDist(ant.coords, my_anthill_coords)
-                    #    ant_to_tunnel = approxDist(ant.coords, my_tunnel_cords)
-                    #    if (ant_to_tunnel < ant_to_anthill):
-                    #        dist = ant_to_tunnel
-                    #    else: dist = ant_to_anthill
-                    #    if dist > 6
-            if approxDist(myInventory.get)
-
-            if size(inventory.ants) < 2:
-                numAnts = 0
-            foodCount[inventory.foodCount] = 1
-
-
-            #sum the weights with the boolean value of each state
-            statescore += weight[0]*numAnts
-            statescore += weight[1]*queenOffAntHill
-            statescore += weight[2]*workerCarrying
-            statescore += weight[3]*foodCount[0]
-            statescore += weight[4]*foodCount[1]
-            statescore += weight[5]*foodCount[2]
-            statescore += weight[6]*foodCount[3]
-            statescore += weight[7]*foodCount[4]
-            statescore += weight[8]*foodCount[5]
-            statescore += weight[9]*foodCount[6]
-            statescore += weight[10]*foodCount[7]
-            statescore += weight[11]*foodCount[8]
-            statescore += weight[12]*foodCount[9]
-            statescore += weight[13]*foodCount[10]
-            statescore += weight[14]*foodCount[11]
-
-
-            #append to the neural score list
-            self.neuralScoreList.append(statescore)
 
 
     #Test method to create inputs using matrix and numpy library
@@ -266,13 +187,13 @@ class AIPlayer(Player):
             enemy = enemyInven.player
             whichSide = 0
 
-        for ant in myInven.ants
+        for ant in myInven.ants:
             if (ant.type == WORKER):
                 workersArr.append(ant)
                 numWorkers += 1
 
 
-        if numWorkers >= 4
+        if numWorkers >= 4:
             return -1
 
         #carrying food
@@ -391,8 +312,8 @@ class AIPlayer(Player):
         #base case, return the move that had the best score
         if depth == 0:
             bestMove = self.findBestMove(gameStateDic)
-            self.stateList.append(getNextStateAdversarial(currentState, bestMove))
             if bestMove == None:
+                self.stateList.append(getNextState(currentState, bestMove))
                 return Move(END, None, None)
             else:
                 self.bestOverallScore = 0
@@ -444,6 +365,8 @@ class AIPlayer(Player):
             if item['Score'] > bestScore:
                 bestScore = item['Score']
                 bestMove = item['Move']
+        if bestScore != -1000:
+            print "Best Score: " + str(bestScore)
         return bestMove
     ##
     #findBestScore
@@ -473,7 +396,11 @@ class AIPlayer(Player):
         #    print "State Number: " + str(index)
         #    asciiPrintState(state)
         #    index ++
-        shuffle(self.stateList)
+        random.shuffle(self.stateList)
         self.neuralEvaluation(self.stateList)
+        index = 0
+        for score in self.neuralScore:
+            print "neural score "+str(index)+" with value: " +str(score)
+            index += 1
         self.backPropogation(self.stateList)
         pass

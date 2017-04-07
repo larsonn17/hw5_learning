@@ -270,6 +270,8 @@ class AIPlayer(Player):
             if (ant.type == WORKER):
                 workersArr.append(ant)
                 numWorkers += 1
+
+
         if numWorkers >= 4
             return -1
 
@@ -285,6 +287,18 @@ class AIPlayer(Player):
         else:
             foodArr.append(foodLocation[0])
             foodArr.append(foodLocation[1])
+        antHill = getConstrList(currentState, myInfo, (ANTHILL,))[0]
+        tunnel = getConstrList(currentState, myInfo, (TUNNEL,))[0]
+        for worker in workersArr:
+            if (worker.carrying == TRUE):
+                distanceValue += (scale / numWorkers) * 2.5
+                if (approxDist(worker.coords, tunnel.coords) < approxDist(worker.coords, antHill,coords)):
+                    distanceValue -= approxDist(worker.coords, tunnel.coords)
+                else:
+                    distanceValue -= approxDist(worker.coords, antHill.coords)
+            else:
+                distanceValue += (scale / numWorkers) * 2
+
 
 
     ##

@@ -158,7 +158,6 @@ class AIPlayer(Player):
         utility = utility/2600
         return utility
 
-
     #Test method to create inputs using matrix and numpy library
     def generateInputs(self, currentState):
 
@@ -219,9 +218,6 @@ class AIPlayer(Player):
                     distanceValue -= approxDist(worker.coords, antHill.coords)
             else:
                 distanceValue += (scale / numWorkers) * 2
-
-
-
     ##
     # g
     # Description: Calculate g(x)
@@ -236,16 +232,16 @@ class AIPlayer(Player):
 
     ##
     # gPrime
-    # Description: Calculate g'(x)
+    # Description: Calculate the transfer function g'(x)
     #
     #Parameter:
     #   x - value
     #
     # returns:
-    #   the rough derivative value at that point
+    #   the transfer derivative value at that point
     #
     def gPrime(self, x):
-        return (x*(1-x))
+        return (x*(1.0 - x))
 
     ##
     # backPropogation
@@ -256,23 +252,30 @@ class AIPlayer(Player):
     #
     def backPropogation(self, stateList): #also modifies the global weight list
         errorList = []
+
+        #determines the error in each node
         index = 0
         for state in stateList:
+
             actualScore =  self.examineGameState(state)
-            neuralScore =  self.neuralScore(index)
-            error = actualScore - neuralScore
+            neuralScore =  self.neuralScoreEval(state)
+
+            error = (actualScore - neuralScore)
             if(error > 1 or error < 0):
                 print "Warning, invalid error at this node: " + str(error)
-            self.deltaList.append(actualScore*(1 - actualScore)*error)
-            self.errorList.append(weight[index]*deltaList[index])
+            deltaError = error*gPrime(actualScore) #amount of error in this node
+            #self.deltaList.append(deltaError)
+
+            errorList.append(weight[index]*deltaError)
             index += 1
 
+        #adjusts/trains the weights
         index = 0
-        while index < self.neuralSize:
+        for error in errorList:
             currWeight = weightList[index]
-            currDelta = self.deltaList[index]
-            currNeurScore = self.neuralScore[index]
-            weightList[index] = currWeight + alpha*currDelta*currNeurScore
+            currNeurScore = self.neuralScoreEval(stateList(index))
+            currErr = errorList[index]
+            weightList[index] = currWeight + alpha*currErr*currNeurScore
             index += 1
 
    ##
@@ -313,7 +316,7 @@ class AIPlayer(Player):
         if depth == 0:
             bestMove = self.findBestMove(gameStateDic)
             if bestMove == None:
-                self.stateList.append(getNextState(currentState, bestMove))
+                self.stateList.append(currentState)
                 return Move(END, None, None)
             else:
                 self.bestOverallScore = 0
@@ -396,11 +399,11 @@ class AIPlayer(Player):
         #    print "State Number: " + str(index)
         #    asciiPrintState(state)
         #    index ++
-        random.shuffle(self.stateList)
-        self.neuralEvaluation(self.stateList)
-        index = 0
-        for score in self.neuralScore:
-            print "neural score "+str(index)+" with value: " +str(score)
-            index += 1
-        self.backPropogation(self.stateList)
+        #random.shuffle(self.stateList)
+    #    self.neuralEvaluation(self.stateList)
+    #    index = 0
+    #    for score in self.neuralScore:
+    #        print "neural score "+str(index)+" with value: " +str(score)
+    #        index += 1
+    #    self.backPropogation(self.stateList)
         pass

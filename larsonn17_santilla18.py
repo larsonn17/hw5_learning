@@ -294,7 +294,7 @@ class AIPlayer(Player):
             error = (actualScore - neuralScore)
             if(error > 1 or error < 0):
                 print "Warning, invalid error at this node: " + str(error)
-            deltaError = error*gPrime(actualScore) #amount of error in this node
+            deltaError = error*gPrime(neuralScore) #amount of error in this node
             #self.deltaList.append(deltaError)
 
             errorList.append(weight[index]*deltaError)

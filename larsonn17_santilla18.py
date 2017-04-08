@@ -153,7 +153,7 @@ class AIPlayer(Player):
                     else:
                         utility += 200 - (10 * ant_to_anthill)
         #score increased by amount of food
-        utility += myInventory.foodNum*200
+        utility += myInventory.foodCount*200
         #scale down to a value between 0 and 1
         utility = utility/2600
         return utility
@@ -242,8 +242,8 @@ class AIPlayer(Player):
         if enemyInven.getQueen() != None:
             healthOfQueen = float(enemyInven.getQueen().health) / 8.0
 
-        foodValue = math.pow(abs(myInven.foodNum - enemyInven.foodNum), 1.5) / 30.0
-        if enemyInven.foodNum > myInven.foodNum:
+        foodValue = math.pow(abs(myInven.foodCount - enemyInven.foodCount), 1.5) / 30.0
+        if enemyInven.foodCount > myInven.foodCount:
             foodValue *= -1
 
         matrix[0,0] = carryingWorkerVal
@@ -287,8 +287,13 @@ class AIPlayer(Player):
     def gPrime(self, x):
         return (x*(1.0 - x))
 
-    def neuralNet(self, input, target):
-        #firstLayer
+    def neuralNet(self, input):
+
+        #matrix multiplication of 2 arrays
+        flInput = np.matmul(inputs, matrix)
+
+        #flOutout =
+
     ##
     # backPropogation
     # Description: modifies weight values after collecting an entire games worth
@@ -297,8 +302,7 @@ class AIPlayer(Player):
     #   stateList - list of all states in a game, should be shuffled before inputs
     #
     def backPropogation(self, stateList): #also modifies the global weight list
-        errorList = []
-
+        #errorList = []
         #determines the error in each node
         index = 0
         for state in stateList:

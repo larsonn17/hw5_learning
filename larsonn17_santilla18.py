@@ -153,7 +153,7 @@ class AIPlayer(Player):
                     else:
                         utility += 200 - (10 * ant_to_anthill)
         #score increased by amount of food
-        utility += myInventory.foodCount*200
+        utility += myInventory.foodNum*200
         #scale down to a value between 0 and 1
         utility = utility/2600
         return utility
@@ -162,7 +162,7 @@ class AIPlayer(Player):
     def generateInputs(self, currentState):
 
         #create empty matrix using numpy
-        temp = np.empty([1, 12])
+        matrix = np.empty([1, 11])
 
         #Variables
         myInven = None
@@ -191,10 +191,6 @@ class AIPlayer(Player):
                 workersArr.append(ant)
                 numWorkers += 1
 
-
-        if numWorkers >= 4:
-            return -1
-
         #carrying food
         distanceValue = 0
         scale = 1
@@ -204,32 +200,32 @@ class AIPlayer(Player):
         notCarryingWorkerVal = 0
 
 
-        if(whichSide == 1):
+        if (whichSide == 1):
             foodArr.append(foodLocation[2])
             foodArr.append(foodLocation[3])
         else:
             foodArr.append(foodLocation[0])
             foodArr.append(foodLocation[1])
+
         antHill = getConstrList(currentState, myInfo, (ANTHILL,))[0]
         tunnel = getConstrList(currentState, myInfo, (TUNNEL,))[0]
         for worker in workersArr:
-            if (worker.carrying == TRUE):
-                distanceValue += (scale / numWorkers) * 2.5
+            if (worker.carrying == True):
+                carryingWorkerVal += (scale / numWorkers)
                 if (approxDist(worker.coords, tunnel.coords) < approxDist(worker.coords, antHill,coords)):
-                    distanceValue -= approxDist(worker.coords, tunnel.coords)
+                    carryingWorkerVal -= approxDist(worker.coords, tunnel.coords) * 0.1
                 else:
-                    distanceValue -= approxDist(worker.coords, antHill.coords)
+                    carryingWorkerVal -= approxDist(worker.coords, antHill.coords) * 0.1
             else:
-                distanceValue += (scale / numWorkers) * 2
-
-                if (approxDist(worker.coords, foodArr[0].coords)) < (approxDist(worker.coords, foodArr[1].coords):
-                    notCarryingWorkerVal += (scale / numWorkers) * 2
+                carryingWorkerVal += (scale / numWorkers) * 0.8
+                if (approxDist(worker.coords, foodArr[0].coords) < approxDist(worker.coords, foodArr[1].coords)):
+                    notCarryingWorkerVal -= approxDist(worker.coords, foodArr[0].coords)*0.1
                 else:
-                    carryingWorkerVal -= (scale / numWorkers) * 2
+                    notCarryingWorkerVal -= approxDist(worker.coords, foodArr[1].coords)*0.1
         distToQueen = 0
         for ant in myInven.ants:
             if ant.type != QUEEN and ant.type != WORKER and enemyInven.getQueen() != None:
-                distToQueen += approxDist(ant.coords, enemyInven.getQueen().coords) * 1
+                distToQueen += approxDist(ant.coords, enemyInven.getQueen().coords) * 0.1
 
         queenVal = 0.5
 
@@ -244,9 +240,26 @@ class AIPlayer(Player):
 
         healthOfQueen = 0
         if enemyInven.getQueen() != None:
-            healthOfQueen = (enemyInven.getQueen().health / 8)
-        #foodValue =
+            healthOfQueen = float(enemyInven.getQueen().health) / 8.0
 
+        foodValue = math.pow(abs(myInven.foodNum - enemyInven.foodNum), 1.5) / 30.0
+        if enemyInven.foodNum > myInven.foodNum:
+            foodValue *= -1
+
+        matrix[0,0] = carryingWorkerVal
+        matrix[0,1] = notCarryingWorkerVal
+        matrix[0,2] = float(len(myInven.ants))/8.0
+        matrix[0,3] = float(len(enemyInven.ants))/8.0
+        matrix[0,4] = float(numWorkers)/float(len(myInven.ants))
+        matrix[0,5] = float(myInven.getQueen.health)/8.0
+        matrix[0,6] = healthOfQueen
+        matrix[0,7] = foodValue
+        matrix[0,8] = distToQueen
+        matrix[0,9] = queenVal
+        #Bias
+        matrix[0,10] = 1
+
+        return matrix
 
 
     ##
@@ -274,6 +287,8 @@ class AIPlayer(Player):
     def gPrime(self, x):
         return (x*(1.0 - x))
 
+    def neuralNet(self, input, target):
+        #firstLayer
     ##
     # backPropogation
     # Description: modifies weight values after collecting an entire games worth
@@ -308,6 +323,7 @@ class AIPlayer(Player):
             currErr = errorList[index]
             weightList[index] = currWeight + alpha*currErr*currNeurScore
             index += 1
+
 
    ##
     #depthSearch

@@ -1,6 +1,7 @@
 import random
 import sys
 import numpy as np
+import math
 sys.path.append("..")  #so other modules can be found in parent dir
 from Player import *
 from Constants import *
@@ -113,8 +114,16 @@ class AIPlayer(Player):
     ##
     def examineGameState(self, currentState):
 
-        myInventory = getCurrPlayerInventory(currentState)
         utility = 100.0
+
+        for inv in currentState.inventories:
+            if inv.player == currentState.whoseTurn:
+                myInventory = inv
+            else:
+                enemyInven = inv
+                for ant in enemyInven.ants:
+                    if ant.type == QUEEN:
+                        enemyQueenCoords = ant.coords
 
         # Store the location of the tunnel, anthill, and food
         tunnel = myInventory.getTunnels()
@@ -144,16 +153,28 @@ class AIPlayer(Player):
                         utility += 100 - (10 * food_1_distance)
                     elif (food_2_distance < food_1_distance):
                         utility += 100 - (10 * food_2_distance)
-                        if food_1_distance < 1 or food_2_distance < 1:
-                            utility += 100
+                    #if food_1_distance < 1 or food_2_distance < 1:
+                    #    utility += 100
                 #if it does have food, have it find the closest drop off point
                 if ant.carrying == True:
                     if (ant_to_tunnel < ant_to_anthill):
                         utility += 200 - (10 * ant_to_tunnel)
                     else:
                         utility += 200 - (10 * ant_to_anthill)
-        #score increased by amount of food
-        utility += myInventory.foodNum*200
+
+            else: #some other ant besides worker and queen
+                utility += approxDist(ant.coords, enemyQueenCoords)
+
+        if len(myInventory.ants) < 2:
+            utility -= 200
+        if len(enemyInven.ants) > 2:
+            utility -= 200
+
+        #score reduced by enemy queen health
+        if enemyInven.getQueen() != None:
+            utility -= enemyInven.getQueen().health * -10
+
+        utility += myInventory.foodCount*200
         #scale down to a value between 0 and 1
         utility = utility/2600
         return utility
@@ -198,7 +219,6 @@ class AIPlayer(Player):
         foodArr = []
         carryingWorkerVal = 0
         notCarryingWorkerVal = 0
-
 
         if (whichSide == 1):
             foodArr.append(foodLocation[2])
@@ -261,7 +281,6 @@ class AIPlayer(Player):
 
         return matrix
 
-
     ##
     # g
     # Description: Calculate g(x)
@@ -272,7 +291,6 @@ class AIPlayer(Player):
     ##
     def g(self, x):
         return 1/(1+math.exp(-x))
-
 
     ##
     # gPrime
@@ -287,8 +305,6 @@ class AIPlayer(Player):
     def gPrime(self, x):
         return (x*(1.0 - x))
 
-    def neuralNet(self, input, target):
-        #firstLayer
     ##
     # backPropogation
     # Description: modifies weight values after collecting an entire games worth
@@ -304,7 +320,8 @@ class AIPlayer(Player):
         for state in stateList:
 
             actualScore =  self.examineGameState(state)
-            neuralScore =  self.neuralScoreEval(state)
+            neuralMatrix = self.generateInputs(state)
+            neuralScore =  self.neuralEval(neuralMatrix)
 
             error = (actualScore - neuralScore)
             if(error > 1 or error < 0):
@@ -319,11 +336,10 @@ class AIPlayer(Player):
         index = 0
         for error in errorList:
             currWeight = weightList[index]
-            currNeurScore = self.neuralScoreEval(stateList(index))
+            currNeurScore = self.neuralEval(stateList(index))
             currErr = errorList[index]
             weightList[index] = currWeight + alpha*currErr*currNeurScore
             index += 1
-
 
    ##
     #depthSearch
@@ -428,7 +444,7 @@ class AIPlayer(Player):
     #Return: The best move to within the list
 
     def findBestScore(self, dictList):
-        bestScore = -500
+        bestScore = -1500
         for item in dictList:
             if item['Score'] > bestScore:
                 bestScore = item['Score']
@@ -441,16 +457,4 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
-        #index = 0
-        #for state in self.stateList:
-        #    print "State Number: " + str(index)
-        #    asciiPrintState(state)
-        #    index ++
-        #random.shuffle(self.stateList)
-    #    self.neuralEvaluation(self.stateList)
-    #    index = 0
-    #    for score in self.neuralScore:
-    #        print "neural score "+str(index)+" with value: " +str(score)
-    #        index += 1
-    #    self.backPropogation(self.stateList)
         pass

@@ -339,13 +339,17 @@ class AIPlayer(Player):
             index += 1
 
         #adjusts/trains the weights
-        index = 0
+        errSum = 0.00
+        index = 0.00
         for error in errorList:
             currWeight = weightList[index]
             currNeurScore = self.neuralEval(stateList(index))
             currErr = errorList[index]
             weightList[index] = currWeight + alpha*currErr*currNeurScore
             index += 1
+            errSum += currErr
+
+        return errSum/index
 
    ##
     #depthSearch
@@ -385,9 +389,9 @@ class AIPlayer(Player):
         if depth == 0:
             bestMove = self.findBestMove(gameStateDic)
             if bestMove == None:
-                self.stateList.append(currentState)
                 return Move(END, None, None)
             else:
+                self.stateList.append(getNextState(currentState, bestMove))
                 self.bestOverallScore = 0
                 return bestMove
         else: #bottom of tree, return the score
@@ -437,8 +441,8 @@ class AIPlayer(Player):
             if item['Score'] > bestScore:
                 bestScore = item['Score']
                 bestMove = item['Move']
-        if bestScore != -1000:
-            print "Best Score: " + str(bestScore)
+        #if bestScore != -1000:
+        #    print "Best Score: " + str(bestScore)
         return bestMove
     ##
     #findBestScore
@@ -463,4 +467,12 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
+        index = 0
+        while index < 1000: #need to see 1000 stable games before calling it okay
+            error = self.backPropogation(self.stateList)
+            if error < .05:
+                index += 1
+            else:
+                index = 0
+        print weightList
         pass

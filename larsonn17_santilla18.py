@@ -43,9 +43,26 @@ class AIPlayer(Player):
         self.stateList = []
         self.neuralScoreList = []
         self.deltaList = []
-        if weightList == None:
-            while size(weightList) < self.NeuralSize: #17, not including workerDist yet
-                weightList.append(random.range(0.1, .9))
+
+        #Variables needed for neural network
+        self.numGames = 0
+        self.alpha = 5.0
+        self.sizeOfhiddenLayer = 6
+        #self.testInputs = []
+        #Initialize matrices with random values
+        self.firstWghtMatrix = np.empty([12, self.sizeOfhiddenLayer])
+        for i in range(0,12):
+            for j in range(0,self.sizeOfhiddenLayer):
+                tempSize = random.uniform(-2,2)
+                self.firstWghtMatrix[i,j] = tempSize
+
+        self.secondWghtMatrix = np.empty([self.sizeOfhiddenLayer, 1])
+        for i in range(0, self.sizeOfhiddenLayer):
+            tempSize = random.uniform(-2, 2)
+            self.secondWghtMatrix[i, 0] = tempSize
+        if weights == None:
+            while size(weights) < self.neuralNetSize: #17, not including workerDist yet
+                weights.append(random.range(0.1, .9))
 
     ##
     #getPlacement
@@ -305,12 +322,46 @@ class AIPlayer(Player):
     def gPrime(self, x):
         return (x*(1.0 - x))
 
-    def neuralNet(self, input):
+    def neuralNet(self, inputs, targVal):
 
-        #matrix multiplication of 2 arrays
-        flInput = np.matmul(inputs, matrix)
+        #set first layer input to matrix multiplication of 2 arrays
+        flInput = np.matmul(inputVars,self.firstWgtMatrix) # 1x12*12x6 = 1x6 matrix
 
-        #flOutout =
+        #create new matrix array
+        flInput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
+        for i in range(0,self.sizeOfhiddenLayer):
+            flInput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
+
+        #set second layer input to matrix multiplication of 2 arrays
+        slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x6*6x1 = 1x1 matrix
+        slOutput = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
+
+        nodeOutputError = targVal - slOutput #error = target - actual
+
+
+        #changing weights
+        outputNodeDelta = nodeOutputError*(slOutput*(1-slOutput))#delta = Err * g'(x)
+
+        #Calculate new Weights going into output node
+        for i in range(0,self.sizeOfhiddenLayer):
+            self.secondWghtMatrix[i,0] = self.secondWghtMatrix[i,0] + self.alpha*outputNodeDelta*flOutput[0,i]
+
+        #Calculate error of Hidden Layer Nodes
+        hiddenError = np.empty([1,self.sizeOfhiddenLayer]) # 1x6 matrix
+        for i in range(0,self.sizeOfhiddenLayer):
+            hiddenError[0,i] = self.secondWghtMatrix[i,0]*outputNodeDelta
+        #Calculate delta of hidden layer perceptrons
+        deltaHiddenLayer = np.empty([1,self.sizeOfhiddenLayer]) # 1x6 matrix
+        for i in range(0,self.sizeOfhiddenLayer):
+            deltaHiddenLayer[0,i] = hiddenError[0,i]*flOutput[0,i]*(1-flOutput[0,i])
+
+        #Calculate New Weights of hidden layer inputs
+        for i in range(0,12):
+            for j in range(0,self.sizeOfhiddenLayer):
+                self.firstWghtMatrix[i,j] = self.firstWghtMatrix[i,j] + self.alpha*deltaHiddenLayer[0,j]*inputs[0,i]
+
+
+        return (slOutput, nodeOutputError)
 
     ##
     # backPropogation

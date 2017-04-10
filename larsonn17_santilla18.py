@@ -23,13 +23,6 @@ from AIPlayerUtils import *
 ##
 class AIPlayer(Player):
 
-    #CONSTANTS
-    alpha = .2
-    neuralSize = 15 #should be updated
-
-    global weightList
-    weightList = []
-
     #__init__
     #Description: Creates a new Player
     #
@@ -41,14 +34,10 @@ class AIPlayer(Player):
         self.depthLimit = 2
         self.bestOverallScore = 0
         self.stateList = []
-        self.neuralScoreList = []
-        self.deltaList = []
 
         #Variables needed for neural network
-        self.numGames = 0
-        self.alpha = 5.0
+        self.alpha = .2
         self.sizeOfhiddenLayer = 6
-        #self.testInputs = []
         #Initialize matrices with random values
         self.firstWghtMatrix = np.empty([12, self.sizeOfhiddenLayer])
         for i in range(0,12):
@@ -60,10 +49,6 @@ class AIPlayer(Player):
         for i in range(0, self.sizeOfhiddenLayer):
             tempSize = random.uniform(-2, 2)
             self.secondWghtMatrix[i, 0] = tempSize
-        if weights == None:
-            while size(weights) < self.neuralNetSize: #17, not including workerDist yet
-                weights.append(random.range(0.1, .9))
-
     ##
     #getPlacement
     #
@@ -309,19 +294,6 @@ class AIPlayer(Player):
     def g(self, x):
         return 1/(1+math.exp(-x))
 
-    ##
-    # gPrime
-    # Description: Calculate the transfer function g'(x)
-    #
-    #Parameter:
-    #   x - value
-    #
-    # returns:
-    #   the transfer derivative value at that point
-    #
-    def gPrime(self, x):
-        return (x*(1.0 - x))
-
     def neuralNet(self, inputs, targVal):
 
         #set first layer input to matrix multiplication of 2 arrays
@@ -337,7 +309,6 @@ class AIPlayer(Player):
         slOutput = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
 
         nodeOutputError = targVal - slOutput #error = target - actual
-
 
         #changing weights
         outputNodeDelta = nodeOutputError*(slOutput*(1-slOutput))#delta = Err * g'(x)
@@ -362,45 +333,6 @@ class AIPlayer(Player):
 
 
         return (slOutput, nodeOutputError)
-
-    ##
-    # backPropogation
-    # Description: modifies weight values after collecting an entire games worth
-    #   of games states
-    # Parameter:
-    #   stateList - list of all states in a game, should be shuffled before inputs
-    #
-    def backPropogation(self, stateList): #also modifies the global weight list
-        #errorList = []
-        #determines the error in each node
-        index = 0
-        for state in stateList:
-
-            actualScore =  self.examineGameState(state)
-            neuralMatrix = self.generateInputs(state)
-            neuralScore =  self.neuralEval(neuralMatrix)
-
-            error = (actualScore - neuralScore)
-            if(error > 1 or error < 0):
-                print "Warning, invalid error at this node: " + str(error)
-            deltaError = error*gPrime(neuralScore) #amount of error in this node
-            #self.deltaList.append(deltaError)
-
-            errorList.append(weight[index]*deltaError)
-            index += 1
-
-        #adjusts/trains the weights
-        errSum = 0.00
-        index = 0.00
-        for error in errorList:
-            currWeight = weightList[index]
-            currNeurScore = self.neuralEval(stateList(index))
-            currErr = errorList[index]
-            weightList[index] = currWeight + alpha*currErr*currNeurScore
-            index += 1
-            errSum += currErr
-
-        return errSum/index
 
    ##
     #depthSearch
@@ -519,11 +451,16 @@ class AIPlayer(Player):
     #
     def registerWin(self, hasWon):
         index = 0
+        random.shuffle(self.stateList)
         while index < 1000: #need to see 1000 stable games before calling it okay
-            error = self.backPropogation(self.stateList)
-            if error < .05:
-                index += 1
-            else:
-                index = 0
-        print weightList
+        #    error = self.backPropogation(self.stateList)
+            for state in stateList:
+                matrix = self.generateInputs(state)
+                targetVal =  self.examineGameState(state)
+                [ouptut, error] = self.neuralNet(matrix, targetVal)
+                if error < .05:
+                    index += 1
+                else:
+                    index = 0
+            print(np.matrix(self.firstWghtMatrix))
         pass

@@ -37,10 +37,10 @@ class AIPlayer(Player):
 
         #Variables needed for neural network
         self.alpha = .2
-        self.sizeOfhiddenLayer = 6
+        self.sizeOfhiddenLayer = 5
         #Initialize matrices with random values
-        self.firstWghtMatrix = np.empty([12, self.sizeOfhiddenLayer])
-        for i in range(0,12):
+        self.firstWghtMatrix = np.empty([11, self.sizeOfhiddenLayer])
+        for i in range(0,11):
             for j in range(0,self.sizeOfhiddenLayer):
                 tempSize = random.uniform(-2,2)
                 self.firstWghtMatrix[i,j] = tempSize
@@ -299,9 +299,9 @@ class AIPlayer(Player):
         flInput = np.matmul(inputs, self.firstWghtMatrix) # 1x12*12x6 = 1x6 matrix
 
         #create new matrix array
-        flInput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
+        flOutput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
         for i in range(0,self.sizeOfhiddenLayer):
-            flInput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
+            flOutput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
 
         #set second layer input to matrix multiplication of 2 arrays
         slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x6*6x1 = 1x1 matrix
@@ -326,7 +326,7 @@ class AIPlayer(Player):
             deltaHiddenLayer[0,i] = hiddenError[0,i]*flOutput[0,i]*(1-flOutput[0,i])
 
         #Calculate New Weights of hidden layer inputs
-        for i in range(0,12):
+        for i in range(0,11):
             for j in range(0,self.sizeOfhiddenLayer):
                 self.firstWghtMatrix[i,j] = self.firstWghtMatrix[i,j] + self.alpha*deltaHiddenLayer[0,j]*inputs[0,i]
 
@@ -447,6 +447,8 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
+        print " Game Over!: "
+        print "     Modifying Weights"
         index = 0
         random.shuffle(self.stateList)
         while index < 1000: #need to see 1000 stable games before calling it okay
@@ -454,10 +456,12 @@ class AIPlayer(Player):
             for state in self.stateList:
                 matrix = self.generateInputs(state)
                 targetVal =  self.examineGameState(state)
-                [ouptut, error] = self.neuralNet(matrix, targetVal)
-                if error < .05:
+                [output, error] = self.neuralNet(matrix, targetVal)
+                if error < .03:
                     index += 1
                 else:
                     index = 0
-            print(np.matrix(self.firstWghtMatrix))
+        f = open('weights.txt', 'w')
+        print >> f, 'Weights: ', self.firstWghtMatrix
+        f.close()
         pass

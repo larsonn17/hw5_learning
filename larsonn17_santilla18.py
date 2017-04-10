@@ -196,18 +196,17 @@ class AIPlayer(Player):
         workersArr = []
         numWorkers = 0
 
-        if (currentState.inventory[0].player == currentState.whoseTurn):
-            myInven = currentState.inventory[0]
-            myInfo = myInv.player
-            enemyInven = currentState.inventory[1]
-            enemy = enemyInven.player
-            whichSide = 1
-        else:
-            myInven = currentState.inventory[1]
-            myInfo = myInven.player
-            enemyInven = currentState.inventory[0]
-            enemy = enemyInven.player
-            whichSide = 0
+
+        for inv in currentState.inventories:
+            if inv.player == currentState.whoseTurn:
+                myInven = inv
+                whichSide = 1
+            else:
+                enemyInven = inv
+                whichSide = 0
+                for ant in enemyInven.ants:
+                    if ant.type == QUEEN:
+                        enemyQueenCoords = ant.coords
 
         for ant in myInven.ants:
             if (ant.type == WORKER):
@@ -234,7 +233,7 @@ class AIPlayer(Player):
         for worker in workersArr:
             if (worker.carrying == True):
                 carryingWorkerVal += (scale / numWorkers)
-                if (approxDist(worker.coords, tunnel.coords) < approxDist(worker.coords, antHill,coords)):
+                if (approxDist(worker.coords, tunnel.coords) < approxDist(worker.coords, antHill.coords)):
                     carryingWorkerVal -= approxDist(worker.coords, tunnel.coords) * 0.1
                 else:
                     carryingWorkerVal -= approxDist(worker.coords, antHill.coords) * 0.1
@@ -273,7 +272,7 @@ class AIPlayer(Player):
         matrix[0,2] = float(len(myInven.ants))/8.0
         matrix[0,3] = float(len(enemyInven.ants))/8.0
         matrix[0,4] = float(numWorkers)/float(len(myInven.ants))
-        matrix[0,5] = float(myInven.getQueen.health)/8.0
+        matrix[0,5] = float(myInven.getQueen().health)/8.0
         matrix[0,6] = healthOfQueen
         matrix[0,7] = foodValue
         matrix[0,8] = distToQueen
@@ -297,7 +296,7 @@ class AIPlayer(Player):
     def neuralNet(self, inputs, targVal):
 
         #set first layer input to matrix multiplication of 2 arrays
-        flInput = np.matmul(inputVars,self.firstWgtMatrix) # 1x12*12x6 = 1x6 matrix
+        flInput = np.matmul(inputs, self.firstWghtMatrix) # 1x12*12x6 = 1x6 matrix
 
         #create new matrix array
         flInput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
@@ -424,8 +423,6 @@ class AIPlayer(Player):
             if item['Score'] > bestScore:
                 bestScore = item['Score']
                 bestMove = item['Move']
-        #if bestScore != -1000:
-        #    print "Best Score: " + str(bestScore)
         return bestMove
     ##
     #findBestScore
@@ -454,7 +451,7 @@ class AIPlayer(Player):
         random.shuffle(self.stateList)
         while index < 1000: #need to see 1000 stable games before calling it okay
         #    error = self.backPropogation(self.stateList)
-            for state in stateList:
+            for state in self.stateList:
                 matrix = self.generateInputs(state)
                 targetVal =  self.examineGameState(state)
                 [ouptut, error] = self.neuralNet(matrix, targetVal)

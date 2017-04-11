@@ -37,35 +37,35 @@ class AIPlayer(Player):
         self.stateList = []
 
         #Variables needed for neural network
-        self.alpha = .1
+        self.alpha = .2
         self.sizeOfhiddenLayer = 5
         #Initialize matrices with random values
-        self.firstWghtMatrix = np.matrix([[-0.12632104, -0.03244958,  0.58373195, -0.99145122,  0.58838048],
- [-0.41587605, -0.45706184,  1.09002623, -0.19254283,  1.15090878],
- [-0.21017106, -0.71604684, -0.83309405,  1.2280394,  -0.61419017],
- [ 0.19248349, -1.06138936, -0.89825464, -0.34204069,  0.2271802 ],
- [-0.35366484,  0.56528709, -0.51781602,  1.45648048,  0.0874081 ],
- [ 0.56064948, -0.37654417,  1.67631684, -1.0741196,   0.67191406],
- [-1.55634081,  0.65271412,  1.89875469, 0.80382882, -1.05273456],
- [-1.88695531, -2.19544389, -1.35166998,  2.13837717,  2.76567211],
- [-0.82753237,  1.68832913, -0.26015824, -1.7201558,   0.84773989],
- [ 0.44349653, -0.77205829, -0.89451787,  0.68695883, -1.32122501],
- [ 1.00476236, -0.00954299, -1.47968705, -0.24071018,  0.48171552]])
+        self.firstWghtMatrix = np.matrix([[-2.18448557, -1.49865565,  0.19762111,  1.75358744, -0.26676624],
+        [-1.31082252,  1.52208034, -0.31011418 ,-0.60525627,  0.20835485],
+        [-0.09651437,  0.19137298,  0.61049357 , 0.05928072,  0.09335255],
+        [ 0.65719789,  0.6728168 , -0.26021225 ,-1.78104369, -1.17424995],
+        [-2.16778309, -0.95385187,  0.9318683  ,-1.36061831,  0.59166779],
+        [ 0.53825111, -1.36954553,  1.03086677, -1.49711953, -2.14937708],
+        [ 1.98690089, -1.84245678,  1.58376175, -0.41119922,  0.06553424],
+        [ 0.35686259, -1.30820327, -5.96235291, -0.05482928,  3.00033174],
+        [-0.38910511,  0.88801072,  0.01310135 ,-0.69832432,  1.69603765],
+        [ 0.36520493, -1.83807055, -0.15288202 ,-0.63251785,  0.05138895],
+        [-1.69918521,  1.02042861 ,-2.78406697, -0.52813814, -1.41992578]])
 
-        self.secondWghtMatrix = np.matrix([[-2.75416984],
- [-2.05331264],
- [-1.02927015],
- [ 1.28730704],
- [ 2.00814793]])
-        for i in range(0,11):
-            for j in range(0,self.sizeOfhiddenLayer):
-                tempSize = random.uniform(-2,2)
-                self.firstWghtMatrix[i,j] = tempSize
+        self.secondWghtMatrix = np.matrix([[-1.3697826 ],
+            [-0.50483882],
+            [-6.32284949],
+            [-1.39680962],
+            [ 4.5109356 ]])
+        #for i in range(0,11):
+        #    for j in range(0,self.sizeOfhiddenLayer):
+        #        tempSize = random.uniform(-2,2)
+        #        self.firstWghtMatrix[i,j] = tempSize
 
-        self.secondWghtMatrix = np.empty([self.sizeOfhiddenLayer, 1])
-        for i in range(0, self.sizeOfhiddenLayer):
-            tempSize = random.uniform(-2, 2)
-            self.secondWghtMatrix[i, 0] = tempSize
+        #self.secondWghtMatrix = np.empty([self.sizeOfhiddenLayer, 1])
+        #for i in range(0, self.sizeOfhiddenLayer):
+        #    tempSize = random.uniform(-2, 2)
+        #    self.secondWghtMatrix[i, 0] = tempSize
     ##
     #getPlacement
     #
@@ -146,7 +146,7 @@ class AIPlayer(Player):
 
         # Store the location of the tunnel, anthill, and food
         tunnel = myInventory.getTunnels()
-        if tunnel[0].coords:
+        if tunnel[0] != []:
             my_tunnel_cords = tunnel[0].coords
         my_anthill_coords = myInventory.getAnthill().coords
         my_food_coords = []
@@ -406,7 +406,6 @@ class AIPlayer(Player):
         currentStateScore = self.examineGameState(currentState)
         for move in movesList:
             nextState = getNextState(currentState, move)
-            #newStateScore = self.examineGameState(nextState)
 
             matrix = self.generateInputs(nextState)
             #set first layer input to matrix multiplication of 2 arrays
@@ -420,7 +419,6 @@ class AIPlayer(Player):
             #set second layer input to matrix multiplication of 2 arrays
             slInput = np.matmul(flOutput, self.secondWghtMatrix) #1x1 matrix
             newStateScore = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
-            #[newStateScore, error] = self.neuralNet(matrix, self.examineGameState(nextState))
             if (newStateScore > currentStateScore):
                 moveObject = [move, nextState, newStateScore, nextState.whoseTurn]
                 gameStateDic.append(dict(zip(keys, moveObject)))
@@ -518,24 +516,23 @@ class AIPlayer(Player):
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
     #
     def registerWin(self, hasWon):
-        print " Game Over!: "
-        print "     Modifying Weights"
-        index = 0
-        random.shuffle(self.stateList)
-        while index < 1000: #need to see 1000 stable games before calling it okay
-        #    error = self.backPropogation(self.stateList)
-            for state in self.stateList:
-                matrix = self.generateInputs(state)
-                targetVal =  self.examineGameState(state)
-                [output, error] = self.neuralNet(matrix, targetVal)
-                if error < .03:
-                    index += 1
-                else:
-                    index = 0
-        print "Game Over"
-        f = open('weights.txt', 'w')
-        print >> f, self.firstWghtMatrix
-        print >> f, self.secondWghtMatrix
-        f.close()
-        print "Output file done"
+        #print " Game Over!: "
+        #print "     Modifying Weights"
+        #index = 0
+        #random.shuffle(self.stateList)
+        #while index < 1000: #need to see 1000 stable games before calling it okay
+        #    for state in self.stateList:
+        #        matrix = self.generateInputs(state)
+        #        targetVal =  self.examineGameState(state)
+        #        [output, error] = self.neuralNet(matrix, targetVal)
+        #        if error < .03:
+        #            index += 1
+        #        else:
+        #            index = 0
+        #print "Game Over"
+        #f = open('weights.txt', 'w')
+        #print >> f, self.firstWghtMatrix
+        #print >> f, self.secondWghtMatrix
+        #f.close()
+        #print "Output file done"
         pass

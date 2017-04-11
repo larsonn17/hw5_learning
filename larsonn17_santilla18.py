@@ -30,16 +30,33 @@ class AIPlayer(Player):
     #   inputPlayerId - The id to give the new player (int)
     ##
     def __init__(self, inputPlayerId):
+        print "Starting New Game"
         super(AIPlayer,self).__init__(inputPlayerId, "Dumb Bunny")
-        self.depthLimit = 2
+        self.depthLimit = 1
         self.bestOverallScore = 0
         self.stateList = []
 
-        #variables needed for neural network
-        self.alpha = .2
+        #Variables needed for neural network
+        self.alpha = .1
         self.sizeOfhiddenLayer = 5
-        #initialize new matrices with random values
-        self.firstWghtMatrix = np.empty([11, self.sizeOfhiddenLayer])
+        #Initialize matrices with random values
+        self.firstWghtMatrix = np.matrix([[-0.12632104, -0.03244958,  0.58373195, -0.99145122,  0.58838048],
+ [-0.41587605, -0.45706184,  1.09002623, -0.19254283,  1.15090878],
+ [-0.21017106, -0.71604684, -0.83309405,  1.2280394,  -0.61419017],
+ [ 0.19248349, -1.06138936, -0.89825464, -0.34204069,  0.2271802 ],
+ [-0.35366484,  0.56528709, -0.51781602,  1.45648048,  0.0874081 ],
+ [ 0.56064948, -0.37654417,  1.67631684, -1.0741196,   0.67191406],
+ [-1.55634081,  0.65271412,  1.89875469, 0.80382882, -1.05273456],
+ [-1.88695531, -2.19544389, -1.35166998,  2.13837717,  2.76567211],
+ [-0.82753237,  1.68832913, -0.26015824, -1.7201558,   0.84773989],
+ [ 0.44349653, -0.77205829, -0.89451787,  0.68695883, -1.32122501],
+ [ 1.00476236, -0.00954299, -1.47968705, -0.24071018,  0.48171552]])
+
+        self.secondWghtMatrix = np.matrix([[-2.75416984],
+ [-2.05331264],
+ [-1.02927015],
+ [ 1.28730704],
+ [ 2.00814793]])
         for i in range(0,11):
             for j in range(0,self.sizeOfhiddenLayer):
                 tempSize = random.uniform(-2,2)
@@ -129,7 +146,8 @@ class AIPlayer(Player):
 
         # Store the location of the tunnel, anthill, and food
         tunnel = myInventory.getTunnels()
-        my_tunnel_cords = tunnel[0].coords
+        if tunnel[0].coords:
+            my_tunnel_cords = tunnel[0].coords
         my_anthill_coords = myInventory.getAnthill().coords
         my_food_coords = []
         foods = getConstrList(currentState, None, (FOOD,))
@@ -388,7 +406,24 @@ class AIPlayer(Player):
         currentStateScore = self.examineGameState(currentState)
         for move in movesList:
             nextState = getNextState(currentState, move)
-            newStateScore = self.examineGameState(nextState)
+            #newStateScore = self.examineGameState(nextState)
+
+            matrix = self.generateInputs(nextState)
+            #set first layer input to matrix multiplication of 2 arrays
+            flInput = np.matmul(matrix, self.firstWghtMatrix) # 1x12*12x6 = 1x6 matrix
+
+            #create new matrix array
+            flOutput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
+            for i in range(0,self.sizeOfhiddenLayer):
+                flOutput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
+
+            #set second layer input to matrix multiplication of 2 arrays
+            slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x6*6x1 = 1x1 matrix
+            newStateScore = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
+            #[newStateScore, error] = self.neuralNet(matrix, self.examineGameState(nextState))
+            if (newStateScore > currentStateScore):
+                moveObject = [move, nextState, newStateScore, nextState.whoseTurn]
+                gameStateDic.append(dict(zip(keys, moveObject)))
             if (newStateScore > currentStateScore):
                 moveObject = [move, nextState, newStateScore, nextState.whoseTurn]
                 gameStateDic.append(dict(zip(keys, moveObject)))
@@ -451,7 +486,7 @@ class AIPlayer(Player):
     #Return: The best move to be made
 
     def findBestMove(self, dictList):
-        bestScore = -1000
+        bestScore = -2000
         bestMove = None
         for item in dictList:
             if item['Score'] > bestScore:
@@ -468,7 +503,7 @@ class AIPlayer(Player):
     #Return: The best move to within the list
 
     def findBestScore(self, dictList):
-        bestScore = -1500
+        bestScore = -3000
         for item in dictList:
             if item['Score'] > bestScore:
                 bestScore = item['Score']
@@ -497,7 +532,10 @@ class AIPlayer(Player):
                     index += 1
                 else:
                     index = 0
+        print "Game Over"
         f = open('weights.txt', 'w')
-        print >> f, 'Weights: ', self.firstWghtMatrix
+        print >> f, self.firstWghtMatrix
+        print >> f, self.secondWghtMatrix
         f.close()
+        print "Output file done
         pass

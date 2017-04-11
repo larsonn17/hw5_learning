@@ -410,15 +410,15 @@ class AIPlayer(Player):
 
             matrix = self.generateInputs(nextState)
             #set first layer input to matrix multiplication of 2 arrays
-            flInput = np.matmul(matrix, self.firstWghtMatrix) # 1x12*12x6 = 1x6 matrix
+            flInput = np.matmul(matrix, self.firstWghtMatrix) #1x5 matrix
 
             #create new matrix array
-            flOutput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
+            flOutput = np.empty([1,self.sizeOfhiddenLayer])#1x5 matrix
             for i in range(0,self.sizeOfhiddenLayer):
-                flOutput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
+                flOutput[0,i] = self.g(flInput[0,i])#calculate g(x) for first layer
 
             #set second layer input to matrix multiplication of 2 arrays
-            slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x6*6x1 = 1x1 matrix
+            slInput = np.matmul(flOutput, self.secondWghtMatrix) #1x1 matrix
             newStateScore = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
             #[newStateScore, error] = self.neuralNet(matrix, self.examineGameState(nextState))
             if (newStateScore > currentStateScore):
@@ -537,5 +537,5 @@ class AIPlayer(Player):
         print >> f, self.firstWghtMatrix
         print >> f, self.secondWghtMatrix
         f.close()
-        print "Output file done
+        print "Output file done"
         pass

@@ -35,10 +35,10 @@ class AIPlayer(Player):
         self.bestOverallScore = 0
         self.stateList = []
 
-        #Variables needed for neural network
+        #variables needed for neural network
         self.alpha = .2
         self.sizeOfhiddenLayer = 5
-        #Initialize matrices with random values
+        #initialize new matrices with random values
         self.firstWghtMatrix = np.empty([11, self.sizeOfhiddenLayer])
         for i in range(0,11):
             for j in range(0,self.sizeOfhiddenLayer):
@@ -181,13 +181,25 @@ class AIPlayer(Player):
         utility = utility/2600
         return utility
 
-    #Test method to create inputs using matrix and numpy library
+    ############
+    ##
+    #generateInputs
+    #
+    #Description: Create a 1x11 matrix from the current state of the game
+    # passed to the neural network
+    #
+    #Parameters:
+    #   currentState - the state of the game to be evaluated.
+    #
+    #Return: an 1x11 matrix of
+    #   higher values indicate moves that are closer to winning the game
+    ##
     def generateInputs(self, currentState):
 
-        #create empty matrix using numpy
+        #create empty matrix using numpy library
         matrix = np.empty([1, 11])
 
-        #Variables
+        #helpful variables used throughout method
         myInven = None
         enemyInven = None
         enemy = None
@@ -196,7 +208,7 @@ class AIPlayer(Player):
         workersArr = []
         numWorkers = 0
 
-
+        #check player inventories
         for inv in currentState.inventories:
             if inv.player == currentState.whoseTurn:
                 myInven = inv
@@ -207,13 +219,12 @@ class AIPlayer(Player):
                 for ant in enemyInven.ants:
                     if ant.type == QUEEN:
                         enemyQueenCoords = ant.coords
-
         for ant in myInven.ants:
             if (ant.type == WORKER):
                 workersArr.append(ant)
                 numWorkers += 1
 
-        #carrying food
+        #food variables
         distanceValue = 0
         scale = 1
         foodLocation = getConstrList(currentState, None, (FOOD,))
@@ -221,15 +232,17 @@ class AIPlayer(Player):
         carryingWorkerVal = 0
         notCarryingWorkerVal = 0
 
+        # check the distance of the worker value from the target goal
         if (whichSide == 1):
             foodArr.append(foodLocation[2])
             foodArr.append(foodLocation[3])
         else:
             foodArr.append(foodLocation[0])
             foodArr.append(foodLocation[1])
-
         antHill = getConstrList(currentState, myInfo, (ANTHILL,))[0]
         tunnel = getConstrList(currentState, myInfo, (TUNNEL,))[0]
+
+        #check if the worker is carrying food or not and modify the values
         for worker in workersArr:
             if (worker.carrying == True):
                 carryingWorkerVal += (scale / numWorkers)
@@ -243,13 +256,15 @@ class AIPlayer(Player):
                     notCarryingWorkerVal -= approxDist(worker.coords, foodArr[0].coords)*0.1
                 else:
                     notCarryingWorkerVal -= approxDist(worker.coords, foodArr[1].coords)*0.1
+
+        #code to check the queen distance and change queen values
         distToQueen = 0
         for ant in myInven.ants:
             if ant.type != QUEEN and ant.type != WORKER and enemyInven.getQueen() != None:
                 distToQueen += approxDist(ant.coords, enemyInven.getQueen().coords) * 0.1
 
         queenVal = 0.5
-
+        #modify the queen's value based on anthill, tunnel, and food positions
         if approxDist(myInven.getQueen().coords, antHill.coords) < 2:
             queenVal -= 0.5
         if approxDist(myInven.getQueen().coords, tunnel.coords) < 2:
@@ -260,13 +275,16 @@ class AIPlayer(Player):
             queenVal -= 0.5
 
         healthOfQueen = 0
+        #modify the health of enemy queen value
         if enemyInven.getQueen() != None:
             healthOfQueen = float(enemyInven.getQueen().health) / 8.0
-
+        #foodVale = my food count - enemy's food count raised to power of 1.5/30
         foodValue = math.pow(abs(myInven.foodCount - enemyInven.foodCount), 1.5) / 30.0
+        #make food value negative is posittive and vice versa
         if enemyInven.foodCount > myInven.foodCount:
             foodValue *= -1
 
+        # the inputs created that will go into the neural network
         matrix[0,0] = carryingWorkerVal
         matrix[0,1] = notCarryingWorkerVal
         matrix[0,2] = float(len(myInven.ants))/8.0
@@ -280,7 +298,7 @@ class AIPlayer(Player):
         #Bias
         matrix[0,10] = 1
 
-        return matrix
+        return matrix #1x11 matrix of inputs
 
     ##
     # g
@@ -293,44 +311,60 @@ class AIPlayer(Player):
     def g(self, x):
         return 1/(1+math.exp(-x))
 
+    ############
+    ##
+    #neuralNet
+    #
+    #Description: generates the output of the neural network given the
+    # input array and using the current weights as well as implements a
+    # backpropogation for adjusting the network’s weights using
+    # gradient descent so that the agent can learn
+    #
+    #Parameters:
+    #   inputs - 1x11 matrix of input values taken from generateInputs method
+    #   targVal - the correct
+    #
+    #Return: the second layer output and error of output node
+    #
+    ##
     def neuralNet(self, inputs, targVal):
 
         #set first layer input to matrix multiplication of 2 arrays
-        flInput = np.matmul(inputs, self.firstWghtMatrix) # 1x12*12x6 = 1x6 matrix
+        flInput = np.matmul(inputs, self.firstWghtMatrix) #1x5 matrix
 
-        #create new matrix array
-        flOutput = np.empty([1,self.sizeOfhiddenLayer]) #1x6 matrix
+        #create new 1x5 matrix
+        flOutput = np.empty([1,self.sizeOfhiddenLayer])
         for i in range(0,self.sizeOfhiddenLayer):
             flOutput[0,i] = self.g(flInput[0,i])# Calculate g(x) for first layer
 
         #set second layer input to matrix multiplication of 2 arrays
-        slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x6*6x1 = 1x1 matrix
-        slOutput = self.g(slInput[0,0]) #calculate g(x) for 1x1 matrix
+        slInput = np.matmul(flOutput, self.secondWghtMatrix) # 1x1 matrix
+        slOutput = self.g(slInput[0,0]) #calculates g(x) for 1x1 matrix
 
-        nodeOutputError = targVal - slOutput #error = target - actual
+        #error = target - actual
+        nodeOutputError = targVal - slOutput
 
-        #changing weights
-        outputNodeDelta = nodeOutputError*(slOutput*(1-slOutput))#delta = Err * g'(x)
+        #change weights
+        outputNodeDelta = nodeOutputError*(slOutput*(1-slOutput))#delta = error * g'(x)
 
-        #Calculate new Weights going into output node
+        #calculate weights going into output node
         for i in range(0,self.sizeOfhiddenLayer):
             self.secondWghtMatrix[i,0] = self.secondWghtMatrix[i,0] + self.alpha*outputNodeDelta*flOutput[0,i]
 
-        #Calculate error of Hidden Layer Nodes
-        hiddenError = np.empty([1,self.sizeOfhiddenLayer]) # 1x6 matrix
+        #calculate error of hidden layer nodes
+        hiddenError = np.empty([1,self.sizeOfhiddenLayer]) #1x5 matrix
         for i in range(0,self.sizeOfhiddenLayer):
             hiddenError[0,i] = self.secondWghtMatrix[i,0]*outputNodeDelta
-        #Calculate delta of hidden layer perceptrons
-        deltaHiddenLayer = np.empty([1,self.sizeOfhiddenLayer]) # 1x6 matrix
+        #calculate delta of hidden layer perceptrons
+        deltaHiddenLayer = np.empty([1,self.sizeOfhiddenLayer]) #1x5 matrix
         for i in range(0,self.sizeOfhiddenLayer):
             deltaHiddenLayer[0,i] = hiddenError[0,i]*flOutput[0,i]*(1-flOutput[0,i])
 
-        #Calculate New Weights of hidden layer inputs
+        #calculate weights of hidden layer inputs
         for i in range(0,11):
             for j in range(0,self.sizeOfhiddenLayer):
                 self.firstWghtMatrix[i,j] = self.firstWghtMatrix[i,j] + self.alpha*deltaHiddenLayer[0,j]*inputs[0,i]
-
-
+        #return second layer outputs and error of outputed node
         return (slOutput, nodeOutputError)
 
    ##
@@ -439,9 +473,11 @@ class AIPlayer(Player):
             if item['Score'] > bestScore:
                 bestScore = item['Score']
         return bestScore
-  #registerWin
+    ###
+    #registerWin
     #Is called when the game ends and simply indicates to the AI whether it has
-    # won or lost the game.
+    # won or lost the game. Also prints out the firstWghtMatrix and secondWghtMatrix
+    # which are used to train the agent
     #
     #Parameters:
     #   hasWon - True if the player has won the game, False if the player lost. (Boolean)
